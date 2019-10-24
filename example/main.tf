@@ -23,9 +23,12 @@ module "fargate" {
       task_container_image = "crccheck/hello-world:latest"
       task_container_assign_public_ip = true
       task_container_port = 8000
-      task_container_environment = {
-        TEST_VARIABLE = "TEST_VALUE"
-      }
+      task_container_environment = [
+          {
+            name = "TEST_VARIABLE"
+            value= "TEST_VALUE"
+          }
+      ]
       health_check = {
         port = "traffic-port"
         path = "/"
@@ -39,9 +42,12 @@ module "fargate" {
       task_container_image = "nginx:latest"
       task_container_assign_public_ip = true
       task_container_port = 80
-      task_container_environment = {
-        TEST_VARIABLE = "TEST_VALUE"
-      }
+      task_container_environment = [
+          {
+            name = "TEST_VARIABLE"
+            value= "TEST_VALUE"
+          }
+      ]
       health_check = {
         port = "traffic-port"
         path = "/"

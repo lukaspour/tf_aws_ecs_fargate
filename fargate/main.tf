@@ -137,8 +137,8 @@ resource "aws_ecs_task_definition" "task" {
   execution_role_arn       = aws_iam_role.execution.arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = var.task_definition_cpu
-  memory                   = var.task_definition_memory
+  cpu                      = lookup(var.containers_definitions[each.key], "task_definition_cpu", 100)
+  memory                   = lookup(var.containers_definitions[each.key], "task_definition_memory", 1024)
   task_role_arn            = aws_iam_role.task.arn
 
   container_definitions = <<EOF
@@ -161,7 +161,7 @@ resource "aws_ecs_task_definition" "task" {
     "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-            "awslogs-group": "${aws_cloudwatch_log_group.main[each.key].name}",
+            "awslogs-group": "${each.key}",
             "awslogs-region": "${data.aws_region.current.name}",
             "awslogs-stream-prefix": "container"
         }
@@ -174,7 +174,6 @@ EOF
 
 resource "aws_ecs_service" "service_with_no_service_registries" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != "" }
-  for_each = var.containers_definitions
 
   depends_on                         = [null_resource.lb_exists]
   name                               = each.key
@@ -189,7 +188,7 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs_service.id]
-    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null))
+    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null)
   }
 
   load_balancer {
@@ -212,7 +211,6 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
 
 resource "aws_ecs_service" "service" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") == "" }
-  for_each = var.containers_definitions
 
   depends_on                         = [null_resource.lb_exists]
   name                               = each.key

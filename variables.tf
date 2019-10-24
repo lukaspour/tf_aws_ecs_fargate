@@ -21,7 +21,7 @@ variable "internal_elb" {
 }
 
 variable "containers_definitions" {
-  type = map(map(string))
+  # type = map(map(string))
   description = "Container setting which is than passed to fargate ecs service"
   default = {}
 }
