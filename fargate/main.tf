@@ -86,7 +86,7 @@ resource "aws_security_group_rule" "egress_service" {
 resource "aws_lb_target_group" "task" {
   for_each = var.containers_definitions
   vpc_id      = var.vpc_id
-  protocol    = lookup(var.containers_definitions[each.key], "task_container_protocol", null)
+  protocol    = lookup(var.containers_definitions[each.key], "task_container_protocol", "HTTP")
   port        = lookup(var.containers_definitions[each.key], "task_container_port", null)
   target_type = "ip"
 
@@ -127,7 +127,7 @@ resource "aws_ecs_task_definition" "task" {
   execution_role_arn       = aws_iam_role.execution[each.key].arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = lookup(var.containers_definitions[each.key], "task_definition_cpu", 100)
+  cpu                      = lookup(var.containers_definitions[each.key], "task_definition_cpu", 256)
   memory                   = lookup(var.containers_definitions[each.key], "task_definition_memory", 1024)
   task_role_arn            = aws_iam_role.task[each.key].arn
 
@@ -219,7 +219,7 @@ resource "aws_ecs_service" "service" {
   }
 
   load_balancer {
-    container_name   = lookup(var.containers_definitions[each.key], "task_container_name", null)
+    container_name   = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
     container_port   = lookup(var.containers_definitions[each.key], "task_container_port", null)
     target_group_arn = aws_lb_target_group.task[each.key].arn
   }
