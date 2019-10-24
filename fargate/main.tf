@@ -174,7 +174,8 @@ resource "aws_ecs_task_definition" "task" {
 EOF
 }
 
-resource "aws_ecs_service" "service" {
+resource "aws_ecs_service" "service_with_no_service_registries" {
+  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != "" }
   for_each = var.containers_definitions
 
   depends_on                         = [null_resource.lb_exists]
@@ -204,17 +205,43 @@ resource "aws_ecs_service" "service" {
     type = lookup(var.containers_definitions[each.key], "deployment_controller_type", "ECS")
   }
 
-//  dynamic "service_registries" {
-//    for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != [] }
-//
-//
-//    for_each = var.service_registry_arn == "" ? [] : [1]
-//    content {
-//      registry_arn   = var.service_registry_arn
-//      container_port = var.task_container_port
-//      container_name = var.container_name != "" ? var.container_name : var.name_prefix
-//    }
-//  }
+  service_registries {
+      registry_arn   = lookup(var.containers_definitions[each.key], "service_registry_arn", null)
+      container_port = lookup(var.containers_definitions[each.key], "task_container_port", null)
+      container_name = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
+  }
+}
+
+resource "aws_ecs_service" "service" {
+  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") == "" }
+  for_each = var.containers_definitions
+
+  depends_on                         = [null_resource.lb_exists]
+  name                               = each.key
+  cluster                            = var.cluster_id
+  task_definition                    = aws_ecs_task_definition.task[each.key].arn
+  desired_count                      = lookup(var.containers_definitions[each.key], "task_desired_count", 1)
+  launch_type                        = "FARGATE"
+  deployment_minimum_healthy_percent = lookup(var.containers_definitions[each.key], "deployment_minimum_healthy_percent", 50)
+  deployment_maximum_percent         = lookup(var.containers_definitions[each.key], "deployment_maximum_percent", 200)
+  health_check_grace_period_seconds  = lookup(var.containers_definitions[each.key], "health_check_grace_period_seconds", 300)
+
+  network_configuration {
+    subnets          = var.private_subnet_ids
+    security_groups  = [aws_security_group.ecs_service.id]
+    assign_public_ip = var.task_container_assign_public_ip
+  }
+
+  load_balancer {
+    container_name   = lookup(var.containers_definitions[each.key], "task_container_name", null)
+    container_port   = lookup(var.containers_definitions[each.key], "task_container_port", null)
+    target_group_arn = aws_lb_target_group.task[each.key].arn
+  }
+
+  deployment_controller {
+    # The deployment controller type to use. Valid values: CODE_DEPLOY, ECS.
+    type = lookup(var.containers_definitions[each.key], "deployment_controller_type", "ECS")
+  }
 }
 
 # HACK: The workaround used in ecs/service does not work for some reason in this module, this fixes the following error:
