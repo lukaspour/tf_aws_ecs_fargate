@@ -8,11 +8,6 @@ variable "name_prefix" {
   description = "Name prefix for fargate cluster"
 }
 
-variable "private_subnet_ids" {
-  type = list(string)
-  description = "List of subnets used for fargate load balancer"
-}
-
 variable "tags" {
   description = "A map of tags (key-value pairs) passed to resources."
   type        = map(string)
@@ -29,4 +24,10 @@ variable "containers_definitions" {
   type = map(map(string))
   description = "Container setting which is than passed to fargate ecs service"
   default = {}
+}
+
+variable "subnet_ids" {
+  type = list(string)
+  description = "Subnet IDs used for load balancer"
+  default = []
 }

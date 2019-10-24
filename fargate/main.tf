@@ -31,7 +31,7 @@ resource "aws_iam_role_policy" "task_execution" {
 
 resource "aws_iam_role_policy" "read_repository_credentials" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "task_repository_credentials", "") != "" }
-  name   = "${var.name_prefix}-read-repository-credentials"
+  name   = "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}-read-repository-credentials"
   role   = aws_iam_role.execution[each.key].id
   policy = data.aws_iam_policy_document.read_repository_credentials.json
 }
@@ -62,7 +62,7 @@ resource "aws_security_group" "ecs_service" {
   name        = "${each.key}-ecs-service-sg"
   description = "Fargate service security group"
   tags = merge(
-    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {}),
     {
       Name = "${each.key}-sg"
     },
@@ -86,12 +86,11 @@ resource "aws_security_group_rule" "egress_service" {
 resource "aws_lb_target_group" "task" {
   for_each = var.containers_definitions
   vpc_id      = var.vpc_id
-  protocol    = var.task_container_protocol
-  port        = var.task_container_port
+  protocol    = lookup(var.containers_definitions[each.key], "task_container_protocol", null)
+  port        = lookup(var.containers_definitions[each.key], "task_container_port", null)
   target_type = "ip"
-  dynamic "health_check" {
-    for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "health_check", "") != [] }
-    content {
+
+  health_check {
       enabled             = lookup(var.containers_definitions[each.key]["health_check"], "enabled", null)
       healthy_threshold   = lookup(var.containers_definitions[each.key]["health_check"], "healthy_threshold", null)
       interval            = lookup(var.containers_definitions[each.key]["health_check"], "interval", null)
@@ -101,7 +100,6 @@ resource "aws_lb_target_group" "task" {
       protocol            = lookup(var.containers_definitions[each.key]["health_check"], "protocol", null)
       timeout             = lookup(var.containers_definitions[each.key]["health_check"], "timeout", null)
       unhealthy_threshold = lookup(var.containers_definitions[each.key]["health_check"], "unhealthy_threshold", null)
-    }
   }
 
   # NOTE: TF is unable to destroy a target group while a listener is attached,
@@ -112,7 +110,7 @@ resource "aws_lb_target_group" "task" {
   }
 
   tags = merge(
-    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {}),
     {
       Name = "${each.key}-target-lookup-${lookup(var.containers_definitions[each.key], "task_container_port", "")}"
     },
@@ -135,7 +133,7 @@ locals {
 resource "aws_ecs_task_definition" "task" {
   for_each = var.containers_definitions
 
-  family                   = var.name_prefix
+  family                   = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
   execution_role_arn       = aws_iam_role.execution.arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
@@ -191,7 +189,7 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs_service.id]
-    assign_public_ip = var.task_container_assign_public_ip
+    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null))
   }
 
   load_balancer {

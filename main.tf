@@ -20,14 +20,10 @@ module "ecs-fargate" {
   source  = "./fargate/"
 
   cluster_id = aws_ecs_cluster.cluster
-
-  health_check = ""
-  name_prefix = ""
-  task_container_image = ""
-  task_container_port = ""
+  containers_definitions = var.containers_definitions
 
   lb_arn = module.fargate_alb.arn
   vpc_id = var.vpc_id
-  private_subnet_ids = var.private_subnet_ids
+  private_subnet_ids = var.subnet_ids
 }
 
