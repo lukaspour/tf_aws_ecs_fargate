@@ -14,7 +14,7 @@ data "aws_subnet_ids" "main" {
 module "fargate" {
   source = "../"
 
-  name_prefix = "fargate_test_cluster"
+  name_prefix = "fargate-test-cluster"
   vpc_id = data.aws_vpc.main.id
   subnet_ids = data.aws_subnet_ids.main.ids
 

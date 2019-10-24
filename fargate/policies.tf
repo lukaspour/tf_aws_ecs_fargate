@@ -1,5 +1,6 @@
 # Task role assume policy
 data "aws_iam_policy_document" "task_assume" {
+  for_each = var.containers_definitions
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRole"]
@@ -13,11 +14,12 @@ data "aws_iam_policy_document" "task_assume" {
 
 # Task logging privileges
 data "aws_iam_policy_document" "task_permissions" {
+  for_each = var.containers_definitions
   statement {
     effect = "Allow"
 
     resources = [
-      aws_cloudwatch_log_group.main.arn,
+      aws_cloudwatch_log_group.main[each.key].arn,
     ]
 
     actions = [
@@ -48,16 +50,18 @@ data "aws_iam_policy_document" "task_execution_permissions" {
 }
 
 data "aws_kms_key" "secretsmanager_key" {
-  key_id = var.repository_credentials_kms_key
+  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "repository_credentials_kms_key", "") != "" }
+  key_id = lookup(var.containers_definitions[each.key], "repository_credentials_kms_key", "")
 }
 
 data "aws_iam_policy_document" "read_repository_credentials" {
+  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "repository_credentials_kms_key", "") != "" }
   statement {
     effect = "Allow"
 
     resources = [
-      var.repository_credentials,
-      data.aws_kms_key.secretsmanager_key.arn,
+      lookup(var.containers_definitions[each.key], "repository_credentials", ""),
+      data.aws_kms_key.secretsmanager_key[each.key].arn,
     ]
 
     actions = [

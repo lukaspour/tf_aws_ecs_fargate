@@ -19,7 +19,7 @@ module "fargate_alb" {
 module "ecs-fargate" {
   source  = "./fargate/"
 
-  cluster_id = aws_ecs_cluster.cluster
+  cluster_id = aws_ecs_cluster.cluster.id
   containers_definitions = var.containers_definitions
 
   lb_arn = module.fargate_alb.arn

@@ -19,7 +19,7 @@ resource "aws_cloudwatch_log_group" "main" {
 resource "aws_iam_role" "execution" {
   for_each = var.containers_definitions
   name               = "${each.key}-task-execution-role"
-  assume_role_policy = data.aws_iam_policy_document.task_assume.json
+  assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
 }
 
 resource "aws_iam_role_policy" "task_execution" {
@@ -33,7 +33,7 @@ resource "aws_iam_role_policy" "read_repository_credentials" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "task_repository_credentials", "") != "" }
   name   = "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}-read-repository-credentials"
   role   = aws_iam_role.execution[each.key].id
-  policy = data.aws_iam_policy_document.read_repository_credentials.json
+  policy = data.aws_iam_policy_document.read_repository_credentials[each.key].json
 }
 
 # ------------------------------------------------------------------------------
@@ -43,14 +43,14 @@ resource "aws_iam_role_policy" "read_repository_credentials" {
 resource "aws_iam_role" "task" {
   for_each = var.containers_definitions
   name               = "${each.key}-task-role"
-  assume_role_policy = data.aws_iam_policy_document.task_assume.json
+  assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
 }
 
 resource "aws_iam_role_policy" "log_agent" {
   for_each = var.containers_definitions
   name   = "${each.key}-log-permissions"
   role   = aws_iam_role.task[each.key].id
-  policy = data.aws_iam_policy_document.task_permissions.json
+  policy = data.aws_iam_policy_document.task_permissions[each.key].json
 }
 
 # ------------------------------------------------------------------------------
@@ -120,26 +120,16 @@ resource "aws_lb_target_group" "task" {
 # ------------------------------------------------------------------------------
 # ECS Task/Service
 # ------------------------------------------------------------------------------
-locals {
-  for_each = var.containers_definitions
-  task_environment = [
-    for k, v in lookup(var.containers_definitions[each.key], "task_container_environment", {}) : {
-      name  = k
-      value = v
-    }
-  ]
-}
-
 resource "aws_ecs_task_definition" "task" {
   for_each = var.containers_definitions
 
   family                   = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
-  execution_role_arn       = aws_iam_role.execution.arn
+  execution_role_arn       = aws_iam_role.execution[each.key].arn
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = lookup(var.containers_definitions[each.key], "task_definition_cpu", 100)
   memory                   = lookup(var.containers_definitions[each.key], "task_definition_memory", 1024)
-  task_role_arn            = aws_iam_role.task.arn
+  task_role_arn            = aws_iam_role.task[each.key].arn
 
   container_definitions = <<EOF
 [{
@@ -166,8 +156,8 @@ resource "aws_ecs_task_definition" "task" {
             "awslogs-stream-prefix": "container"
         }
     },
-    "command": ${jsonencode(lookup(var.containers_definitions[each.key], "task_container_command", null))},
-    "environment": ${jsonencode(local.task_environment[each.key])}
+    "command": ${jsonencode(lookup(var.containers_definitions[each.key], "task_container_command", []))},
+    "environment": ${jsonencode(lookup(var.containers_definitions[each.key], "task_container_environment", []))}
 }]
 EOF
 }
@@ -187,7 +177,7 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
 
   network_configuration {
     subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.ecs_service.id]
+    security_groups  = [aws_security_group.ecs_service[each.key].id]
     assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null)
   }
 
@@ -224,8 +214,8 @@ resource "aws_ecs_service" "service" {
 
   network_configuration {
     subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.ecs_service.id]
-    assign_public_ip = var.task_container_assign_public_ip
+    security_groups  = [aws_security_group.ecs_service[each.key].id]
+    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null)
   }
 
   load_balancer {
