@@ -19,7 +19,7 @@ module "fargate" {
   subnet_ids  = data.aws_subnet_ids.main.ids
 
   containers_definitions = {
-    hello-world = {
+    helloworld = {
       task_container_image            = "crccheck/hello-world:latest"
       task_container_assign_public_ip = true
       task_container_port             = 8000
@@ -34,11 +34,10 @@ module "fargate" {
         path = "/"
       }
       task_tags = {
-        environment = "dev"
-        terraform   = "True"
+        terraform = "True"
       }
     }
-    hello-nginx = {
+    hellonginx = {
       task_container_image            = "nginx:latest"
       task_container_assign_public_ip = true
       task_container_port             = 80
@@ -53,9 +52,13 @@ module "fargate" {
         path = "/"
       }
       task_tags = {
-        environment = "dev"
-        terraform   = "True"
+        terraform = "True"
       }
+
     }
+  }
+
+  tags = {
+    environment = "dev"
   }
 }

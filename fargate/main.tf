@@ -10,7 +10,10 @@ resource "aws_cloudwatch_log_group" "main" {
   for_each          = var.containers_definitions
   name              = each.key
   retention_in_days = lookup(var.containers_definitions[each.key], "task_log_retention_in_days", 30)
-  tags              = lookup(var.containers_definitions[each.key], "task_tags", {})
+  tags = merge(
+    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {})
+  )
 }
 
 # ------------------------------------------------------------------------------
@@ -20,6 +23,10 @@ resource "aws_iam_role" "execution" {
   for_each           = var.containers_definitions
   name               = "${each.key}-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
+  tags = merge(
+    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {})
+  )
 }
 
 resource "aws_iam_role_policy" "task_execution" {
@@ -44,6 +51,10 @@ resource "aws_iam_role" "task" {
   for_each           = var.containers_definitions
   name               = "${each.key}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
+  tags = merge(
+    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {})
+  )
 }
 
 resource "aws_iam_role_policy" "log_agent" {
@@ -62,6 +73,7 @@ resource "aws_security_group" "ecs_service" {
   name        = "${each.key}-ecs-service-sg"
   description = "Fargate service security group"
   tags = merge(
+    var.tags,
     lookup(var.containers_definitions[each.key], "task_tags", {}),
     {
       Name = "${each.key}-sg"
@@ -80,19 +92,81 @@ resource "aws_security_group_rule" "egress_service" {
   ipv6_cidr_blocks  = ["::/0"]
 }
 
+resource "aws_security_group_rule" "ingress_service" {
+  for_each          = var.containers_definitions
+  security_group_id = aws_security_group.ecs_service[each.key].id
+  type              = "ingress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = lookup(var.containers_definitions[each.key], "task_container_port", null)
+  cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
+}
+
 # ------------------------------------------------------------------------------
 # LB Target group
 # ------------------------------------------------------------------------------
 
-resource "aws_lb_listener" "alb" {
-  for_each          = var.containers_definitions
-  load_balancer_arn = var.lb_arn
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = var.alb_arn
   port              = 80
   protocol          = "HTTP"
 
   default_action {
-    target_group_arn = aws_lb_target_group.task[each.key].arn
+    type = "fixed-response"
+
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Default fixed response content"
+      status_code  = "200"
+    }
+  }
+}
+
+resource "aws_lb_listener" "https" {
+  count             = var.certificate_arn == "" ? 0 : 1
+  load_balancer_arn = var.alb_arn
+  port              = 443
+  protocol          = "HTTPS"
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "Default fixed response content"
+      status_code  = "200"
+    }
+  }
+  certificate_arn = var.certificate_arn
+}
+
+resource "aws_lb_listener_rule" "routing_https" {
+  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != "" && var.certificate_arn != "" }
+
+  listener_arn = join("", aws_lb_listener.https.*.arn)
+
+  action {
     type             = "forward"
+    target_group_arn = aws_lb_target_group.task[each.key].arn
+  }
+
+  condition {
+    field  = lookup(var.containers_definitions[each.key], "rule_field", "host-header")
+    values = lookup(var.containers_definitions[each.key], "rule_values", ["${each.key}.com"])
+  }
+}
+
+resource "aws_lb_listener_rule" "routing_http" {
+  for_each     = var.containers_definitions
+  listener_arn = aws_lb_listener.http.arn
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.task[each.key].arn
+  }
+
+  condition {
+    field  = lookup(var.containers_definitions[each.key], "rule_field", "host-header")
+    values = lookup(var.containers_definitions[each.key], "rule_values", ["${each.key}.com"])
   }
 }
 
@@ -121,8 +195,8 @@ resource "aws_lb_target_group" "task" {
   lifecycle {
     create_before_destroy = true
   }
-
   tags = merge(
+    var.tags,
     lookup(var.containers_definitions[each.key], "task_tags", {}),
     {
       Name = "${each.key}-target-lookup-${lookup(var.containers_definitions[each.key], "task_container_port", "")}"
@@ -173,6 +247,10 @@ resource "aws_ecs_task_definition" "task" {
     "environment": ${jsonencode(lookup(var.containers_definitions[each.key], "task_container_environment", []))}
 }]
 EOF
+  tags = merge(
+    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {})
+  )
 }
 
 resource "aws_ecs_service" "service_with_no_service_registries" {
@@ -210,6 +288,11 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
     container_port = lookup(var.containers_definitions[each.key], "task_container_port", null)
     container_name = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
   }
+
+  tags = merge(
+    var.tags,
+    lookup(var.containers_definitions[each.key], "task_tags", {})
+  )
 }
 
 resource "aws_ecs_service" "service" {
@@ -249,7 +332,7 @@ resource "aws_ecs_service" "service" {
 # Service depends on this resources which prevents it from being created until the LB is ready
 resource "null_resource" "lb_exists" {
   triggers = {
-    alb_name = var.lb_arn
+    alb_name = var.alb_arn
   }
 }
 

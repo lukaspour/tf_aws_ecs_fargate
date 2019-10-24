@@ -30,3 +30,9 @@ variable "subnet_ids" {
   description = "Subnet IDs used for load balancer"
   default     = []
 }
+
+variable "certificate_arn" {
+  type        = string
+  description = "ARN for certificate at ACM"
+  default     = ""
+}

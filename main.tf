@@ -15,6 +15,25 @@ module "fargate_alb" {
   tags = var.tags
 }
 
+resource "aws_security_group_rule" "ingress_http" {
+  security_group_id = module.fargate_alb.security_group_id
+  type              = "ingress"
+  protocol          = "TCP"
+  from_port         = 80
+  to_port           = 80
+  cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
+}
+
+resource "aws_security_group_rule" "ingress_https" {
+  security_group_id = module.fargate_alb.security_group_id
+  type              = "ingress"
+  protocol          = "TCP"
+  from_port         = 443
+  to_port           = 443
+  cidr_blocks       = ["0.0.0.0/0"]
+  ipv6_cidr_blocks  = ["::/0"]
+}
 
 module "ecs-fargate" {
   source = "./fargate/"
@@ -22,7 +41,8 @@ module "ecs-fargate" {
   cluster_id             = aws_ecs_cluster.cluster.id
   containers_definitions = var.containers_definitions
 
-  lb_arn             = module.fargate_alb.arn
+  alb_arn = module.fargate_alb.arn
+
   vpc_id             = var.vpc_id
   private_subnet_ids = var.subnet_ids
 }
