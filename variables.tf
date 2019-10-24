@@ -1,10 +1,10 @@
 variable "vpc_id" {
-  type = string
+  type        = string
   description = "VPC ID"
 }
 
 variable "name_prefix" {
-  type = string
+  type        = string
   description = "Name prefix for fargate cluster"
 }
 
@@ -15,19 +15,18 @@ variable "tags" {
 }
 
 variable "internal_elb" {
-  default = false
-  type = bool
+  default     = false
+  type        = bool
   description = "If used terraform should be internal or not"
 }
 
 variable "containers_definitions" {
-  # type = map(map(string))
   description = "Container setting which is than passed to fargate ecs service"
-  default = {}
+  default     = {}
 }
 
 variable "subnet_ids" {
-  type = list(string)
+  type        = list(string)
   description = "Subnet IDs used for load balancer"
-  default = []
+  default     = []
 }

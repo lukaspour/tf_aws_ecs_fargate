@@ -31,7 +31,7 @@ variable "tags" {
 variable "containers_definitions" {
   # type = map(map(string))
   description = "Container setting which is than passed to fargate ecs service"
-  default = {}
+  default     = {}
 }
 
 #######################################################################################################################

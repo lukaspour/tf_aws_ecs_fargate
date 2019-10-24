@@ -7,7 +7,7 @@ data "aws_region" "current" {}
 # Cloudwatch
 # ------------------------------------------------------------------------------
 resource "aws_cloudwatch_log_group" "main" {
-  for_each = var.containers_definitions
+  for_each          = var.containers_definitions
   name              = each.key
   retention_in_days = lookup(var.containers_definitions[each.key], "task_log_retention_in_days", 30)
   tags              = lookup(var.containers_definitions[each.key], "task_tags", {})
@@ -17,23 +17,23 @@ resource "aws_cloudwatch_log_group" "main" {
 # IAM - Task execution role, needed to pull ECR images etc.
 # ------------------------------------------------------------------------------
 resource "aws_iam_role" "execution" {
-  for_each = var.containers_definitions
+  for_each           = var.containers_definitions
   name               = "${each.key}-task-execution-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
 }
 
 resource "aws_iam_role_policy" "task_execution" {
   for_each = var.containers_definitions
-  name   = "${each.key}-task-execution"
-  role   = aws_iam_role.execution[each.key].id
-  policy = data.aws_iam_policy_document.task_execution_permissions.json
+  name     = "${each.key}-task-execution"
+  role     = aws_iam_role.execution[each.key].id
+  policy   = data.aws_iam_policy_document.task_execution_permissions.json
 }
 
 resource "aws_iam_role_policy" "read_repository_credentials" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "task_repository_credentials", "") != "" }
-  name   = "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}-read-repository-credentials"
-  role   = aws_iam_role.execution[each.key].id
-  policy = data.aws_iam_policy_document.read_repository_credentials[each.key].json
+  name     = "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}-read-repository-credentials"
+  role     = aws_iam_role.execution[each.key].id
+  policy   = data.aws_iam_policy_document.read_repository_credentials[each.key].json
 }
 
 # ------------------------------------------------------------------------------
@@ -41,23 +41,23 @@ resource "aws_iam_role_policy" "read_repository_credentials" {
 # when they use the module. S3, Dynamo permissions etc etc.
 # ------------------------------------------------------------------------------
 resource "aws_iam_role" "task" {
-  for_each = var.containers_definitions
+  for_each           = var.containers_definitions
   name               = "${each.key}-task-role"
   assume_role_policy = data.aws_iam_policy_document.task_assume[each.key].json
 }
 
 resource "aws_iam_role_policy" "log_agent" {
   for_each = var.containers_definitions
-  name   = "${each.key}-log-permissions"
-  role   = aws_iam_role.task[each.key].id
-  policy = data.aws_iam_policy_document.task_permissions[each.key].json
+  name     = "${each.key}-log-permissions"
+  role     = aws_iam_role.task[each.key].id
+  policy   = data.aws_iam_policy_document.task_permissions[each.key].json
 }
 
 # ------------------------------------------------------------------------------
 # Security groups
 # ------------------------------------------------------------------------------
 resource "aws_security_group" "ecs_service" {
-  for_each = var.containers_definitions
+  for_each    = var.containers_definitions
   vpc_id      = var.vpc_id
   name        = "${each.key}-ecs-service-sg"
   description = "Fargate service security group"
@@ -70,7 +70,7 @@ resource "aws_security_group" "ecs_service" {
 }
 
 resource "aws_security_group_rule" "egress_service" {
-  for_each = var.containers_definitions
+  for_each          = var.containers_definitions
   security_group_id = aws_security_group.ecs_service[each.key].id
   type              = "egress"
   protocol          = "-1"
@@ -83,23 +83,36 @@ resource "aws_security_group_rule" "egress_service" {
 # ------------------------------------------------------------------------------
 # LB Target group
 # ------------------------------------------------------------------------------
+
+resource "aws_lb_listener" "alb" {
+  for_each          = var.containers_definitions
+  load_balancer_arn = var.lb_arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = aws_lb_target_group.task[each.key].arn
+    type             = "forward"
+  }
+}
+
 resource "aws_lb_target_group" "task" {
-  for_each = var.containers_definitions
+  for_each    = var.containers_definitions
   vpc_id      = var.vpc_id
   protocol    = lookup(var.containers_definitions[each.key], "task_container_protocol", "HTTP")
   port        = lookup(var.containers_definitions[each.key], "task_container_port", null)
   target_type = "ip"
 
   health_check {
-      enabled             = lookup(var.containers_definitions[each.key]["health_check"], "enabled", null)
-      healthy_threshold   = lookup(var.containers_definitions[each.key]["health_check"], "healthy_threshold", null)
-      interval            = lookup(var.containers_definitions[each.key]["health_check"], "interval", null)
-      matcher             = lookup(var.containers_definitions[each.key]["health_check"], "matcher", null)
-      path                = lookup(var.containers_definitions[each.key]["health_check"], "path", null)
-      port                = lookup(var.containers_definitions[each.key]["health_check"], "port", null)
-      protocol            = lookup(var.containers_definitions[each.key]["health_check"], "protocol", null)
-      timeout             = lookup(var.containers_definitions[each.key]["health_check"], "timeout", null)
-      unhealthy_threshold = lookup(var.containers_definitions[each.key]["health_check"], "unhealthy_threshold", null)
+    enabled             = lookup(var.containers_definitions[each.key]["health_check"], "enabled", null)
+    healthy_threshold   = lookup(var.containers_definitions[each.key]["health_check"], "healthy_threshold", null)
+    interval            = lookup(var.containers_definitions[each.key]["health_check"], "interval", null)
+    matcher             = lookup(var.containers_definitions[each.key]["health_check"], "matcher", null)
+    path                = lookup(var.containers_definitions[each.key]["health_check"], "path", null)
+    port                = lookup(var.containers_definitions[each.key]["health_check"], "port", null)
+    protocol            = lookup(var.containers_definitions[each.key]["health_check"], "protocol", null)
+    timeout             = lookup(var.containers_definitions[each.key]["health_check"], "timeout", null)
+    unhealthy_threshold = lookup(var.containers_definitions[each.key]["health_check"], "unhealthy_threshold", null)
   }
 
   # NOTE: TF is unable to destroy a target group while a listener is attached,
@@ -193,9 +206,9 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
   }
 
   service_registries {
-      registry_arn   = lookup(var.containers_definitions[each.key], "service_registry_arn", null)
-      container_port = lookup(var.containers_definitions[each.key], "task_container_port", null)
-      container_name = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
+    registry_arn   = lookup(var.containers_definitions[each.key], "service_registry_arn", null)
+    container_port = lookup(var.containers_definitions[each.key], "task_container_port", null)
+    container_name = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
   }
 }
 

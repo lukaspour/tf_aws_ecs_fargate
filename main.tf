@@ -17,13 +17,13 @@ module "fargate_alb" {
 
 
 module "ecs-fargate" {
-  source  = "./fargate/"
+  source = "./fargate/"
 
-  cluster_id = aws_ecs_cluster.cluster.id
+  cluster_id             = aws_ecs_cluster.cluster.id
   containers_definitions = var.containers_definitions
 
-  lb_arn = module.fargate_alb.arn
-  vpc_id = var.vpc_id
+  lb_arn             = module.fargate_alb.arn
+  vpc_id             = var.vpc_id
   private_subnet_ids = var.subnet_ids
 }
 

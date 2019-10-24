@@ -51,7 +51,7 @@ data "aws_iam_policy_document" "task_execution_permissions" {
 
 data "aws_kms_key" "secretsmanager_key" {
   for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "repository_credentials_kms_key", "") != "" }
-  key_id = lookup(var.containers_definitions[each.key], "repository_credentials_kms_key", "")
+  key_id   = lookup(var.containers_definitions[each.key], "repository_credentials_kms_key", "")
 }
 
 data "aws_iam_policy_document" "read_repository_credentials" {
