@@ -38,3 +38,7 @@ output "log_group_name" {
   value       = module.ecs-fargate.log_group_name
 }
 
+output "sns_topic_arn" {
+  description = "SNS topic to subscribe for alerts"
+  value       = module.monitoring_sns_topic.this_sns_topic_arn
+}

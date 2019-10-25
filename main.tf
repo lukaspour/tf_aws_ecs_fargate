@@ -48,3 +48,15 @@ module "ecs-fargate" {
   private_subnet_ids = var.subnet_ids
 }
 
+module "monitoring_sns_topic" {
+  source = "./sns"
+
+  sns_topic_name = "${var.name_prefix}-cluster-sns-monitoring-topic"
+}
+
+module "monitoring" {
+  source = "./monitoring"
+
+  sns_notification_topic = module.monitoring_sns_topic.this_sns_topic_arn
+  name_prefix            = var.name_prefix
+}

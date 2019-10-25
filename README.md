@@ -120,6 +120,7 @@ This is a special map of arguments needed for definition of tasks and services:
 | service\_name | Map of services' names |
 | service\_arn | Map of services' ARNs |
 | log\_group\_name | Map of lgo groups' names |
+| sns\_topic\_arn | SNS topic to subscribe for alerts |
 
 
 
