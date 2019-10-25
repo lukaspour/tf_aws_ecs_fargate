@@ -38,6 +38,7 @@ resource "aws_security_group_rule" "ingress_https" {
 module "ecs-fargate" {
   source = "./fargate/"
 
+  cluster_name           = "${var.name_prefix}-cluster"
   cluster_id             = aws_ecs_cluster.cluster.id
   containers_definitions = var.containers_definitions
 

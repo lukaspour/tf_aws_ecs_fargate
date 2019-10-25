@@ -54,7 +54,7 @@ module "fargate" {
       task_tags = {
         terraform = "True"
       }
-
+      scaling_enable = true
     }
   }
   tags = {

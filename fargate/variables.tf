@@ -16,6 +16,11 @@ variable "cluster_id" {
   type        = string
 }
 
+variable "cluster_name" {
+  description = "Name that identifies the cluster."
+  type        = string
+}
+
 variable "tags" {
   description = "A map of tags (key-value pairs) passed to resources."
   type        = map(string)
