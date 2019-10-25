@@ -57,7 +57,6 @@ module "fargate" {
 
     }
   }
-
   tags = {
     environment = "dev"
   }

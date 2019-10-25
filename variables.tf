@@ -9,7 +9,7 @@ variable "name_prefix" {
 }
 
 variable "tags" {
-  description = "A map of tags (key-value pairs) passed to resources."
+  description = "A map of tags (key-value pairs) passed to resources"
   type        = map(string)
   default     = {}
 }
@@ -17,7 +17,7 @@ variable "tags" {
 variable "internal_elb" {
   default     = false
   type        = bool
-  description = "If used terraform should be internal or not"
+  description = "If used, load balancer will be only for internal use"
 }
 
 variable "containers_definitions" {
@@ -33,6 +33,6 @@ variable "subnet_ids" {
 
 variable "certificate_arn" {
   type        = string
-  description = "ARN for certificate at ACM"
+  description = "ARN for certificate at ACM required for HTTPS listener"
   default     = ""
 }

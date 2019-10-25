@@ -140,7 +140,7 @@ resource "aws_lb_listener" "https" {
 }
 
 resource "aws_lb_listener_rule" "routing_https" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != "" && var.certificate_arn != "" }
+  for_each = { for i, z in var.containers_definitions : i => z if var.certificate_arn != "" }
 
   listener_arn = join("", aws_lb_listener.https.*.arn)
 
@@ -221,7 +221,7 @@ resource "aws_ecs_task_definition" "task" {
   container_definitions = <<EOF
 [{
     "name": "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}",
-    "image": "${lookup(var.containers_definitions[each.key], "task_container_image", "")}",
+    "image": "${lookup(var.containers_definitions[each.key], "task_container_image", "nginx")}",
     %{if lookup(var.containers_definitions[each.key], "task_repository_credentials", "") != ""~}
     "repositoryCredentials": {
         "credentialsParameter": "${lookup(var.containers_definitions[each.key], "task_repository_credentials", null)}"
