@@ -39,7 +39,8 @@ module "dashboard-lambda" {
   filename    = "${path.module}/lambda_services_dashboard.zip"
 
   environment = {
-    ECS_CLUSTER = "${var.name_prefix}-cluster"
+    ECS_CLUSTER     = "${var.name_prefix}-cluster"
+    ECS_REGION_NAME = var.default_region
   }
 
   handler = "main.lambda_handler"

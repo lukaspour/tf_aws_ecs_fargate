@@ -63,6 +63,7 @@ module "alarm-lambda" {
     ECS_CLUSTER        = "${var.name_prefix}-cluster"
     SNS_ALERT_TOPIC    = var.sns_notification_topic
     EVALUATION_PERIODS = var.ecs_service_alerts_evaluation_periods
+    ECS_REGION_NAME    = var.default_region
   }
 
   handler = "main.lambda_handler"

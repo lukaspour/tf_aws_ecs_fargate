@@ -1,5 +1,5 @@
 resource "random_string" "lambda_postfix_generator" {
-  length  = 16
+  length  = 4
   upper   = true
   lower   = true
   number  = true
@@ -7,12 +7,12 @@ resource "random_string" "lambda_postfix_generator" {
 }
 
 resource "aws_iam_role" "lambda_main" {
-  name               = "${var.name_prefix}-lambda-role-${random_string.lambda_postfix_generator.result}"
+  name               = "${var.name_prefix}-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 }
 
 resource "aws_iam_role_policy" "lambda_main" {
-  name   = "${var.name_prefix}-lambda-policy-${random_string.lambda_postfix_generator.result}"
+  name   = "${var.name_prefix}-policy"
   role   = aws_iam_role.lambda_main.name
   policy = var.policy
 }

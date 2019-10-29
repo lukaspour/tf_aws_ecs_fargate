@@ -20,3 +20,9 @@ variable "sns_notification_topic" {
   default     = ""
   type        = string
 }
+
+variable "default_region" {
+  default     = "eu-west-1"
+  description = "Default region to be used in Lambda functions"
+  type        = string
+}

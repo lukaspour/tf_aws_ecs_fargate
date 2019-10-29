@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 resource "aws_ecs_cluster" "cluster" {
   name = "${var.name_prefix}-cluster"
 }
@@ -59,4 +61,5 @@ module "monitoring" {
 
   sns_notification_topic = module.monitoring_sns_topic.this_sns_topic_arn
   name_prefix            = var.name_prefix
+  default_region         = data.aws_region.current.name
 }
