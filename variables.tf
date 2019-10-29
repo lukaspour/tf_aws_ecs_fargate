@@ -15,7 +15,7 @@ variable "tags" {
 }
 
 variable "internal_elb" {
-  default     = false
+  default     = true
   type        = bool
   description = "If used, load balancer will be only for internal use"
 }
@@ -35,4 +35,13 @@ variable "certificate_arn" {
   type        = string
   description = "ARN for certificate at ACM required for HTTPS listener"
   default     = ""
+}
+
+variable "allowed_subnets" {
+  type = map(list(string))
+  default = {
+    ipv4 = ["0.0.0.0/0"]
+    ipv6 = ["::/0"]
+  }
+  description = "Subnets allowed to access the services and load balancer"
 }

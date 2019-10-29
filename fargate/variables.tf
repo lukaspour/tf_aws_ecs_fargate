@@ -42,3 +42,14 @@ variable "certificate_arn" {
   description = "ARN for certificate at ACM"
   default     = ""
 }
+
+variable "allowed_subnets" {
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+  description = "Subnets allowed to access the services and load balancer"
+}
+
+variable "allowed_sg" {
+  type        = string
+  description = "Allowed SG to ECS services, probably useful only for Load Balancer"
+}

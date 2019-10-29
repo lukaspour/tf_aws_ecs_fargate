@@ -23,8 +23,8 @@ resource "aws_security_group_rule" "ingress_http" {
   protocol          = "TCP"
   from_port         = 80
   to_port           = 80
-  cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
+  cidr_blocks       = var.allowed_subnets.ipv4
+  ipv6_cidr_blocks  = var.allowed_subnets.ipv6
 }
 
 resource "aws_security_group_rule" "ingress_https" {
@@ -33,8 +33,8 @@ resource "aws_security_group_rule" "ingress_https" {
   protocol          = "TCP"
   from_port         = 443
   to_port           = 443
-  cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
+  cidr_blocks       = var.allowed_subnets.ipv4
+  ipv6_cidr_blocks  = var.allowed_subnets.ipv6
 }
 
 module "ecs-fargate" {
@@ -48,6 +48,8 @@ module "ecs-fargate" {
 
   vpc_id             = var.vpc_id
   private_subnet_ids = var.subnet_ids
+  allowed_sg         = module.fargate_alb.security_group_id
+  allowed_subnets    = concat(var.allowed_subnets.ipv4)
 }
 
 module "monitoring_sns_topic" {

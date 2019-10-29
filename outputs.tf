@@ -42,3 +42,8 @@ output "sns_topic_arn" {
   description = "SNS topic to subscribe for alerts"
   value       = module.monitoring_sns_topic.this_sns_topic_arn
 }
+
+output "load_balancer_domain" {
+  description = "Get DNS record of load balancer"
+  value       = module.fargate_alb.dns_name
+}

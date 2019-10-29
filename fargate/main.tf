@@ -89,7 +89,6 @@ resource "aws_security_group_rule" "egress_service" {
   from_port         = 0
   to_port           = 0
   cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
 }
 
 resource "aws_security_group_rule" "ingress_service" {
@@ -99,9 +98,30 @@ resource "aws_security_group_rule" "ingress_service" {
   protocol          = "-1"
   from_port         = 0
   to_port           = lookup(var.containers_definitions[each.key], "task_container_port", null)
-  cidr_blocks       = ["0.0.0.0/0"]
-  ipv6_cidr_blocks  = ["::/0"]
+  cidr_blocks       = var.allowed_subnets
 }
+
+resource "aws_security_group_rule" "egress_service_sg" {
+  for_each                 = var.containers_definitions
+  security_group_id        = aws_security_group.ecs_service[each.key].id
+  type                     = "egress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = var.allowed_sg
+}
+
+resource "aws_security_group_rule" "ingress_service_sg" {
+  for_each                 = var.containers_definitions
+  security_group_id        = aws_security_group.ecs_service[each.key].id
+  type                     = "ingress"
+  protocol                 = "-1"
+  from_port                = 0
+  to_port                  = 0
+  source_security_group_id = var.allowed_sg
+}
+
+
 
 # ------------------------------------------------------------------------------
 # LB Target group

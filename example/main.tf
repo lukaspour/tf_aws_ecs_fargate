@@ -18,6 +18,8 @@ module "fargate" {
   vpc_id      = data.aws_vpc.main.id
   subnet_ids  = data.aws_subnet_ids.main.ids
 
+  internal_elb = false
+
   containers_definitions = {
     helloworld = {
       task_container_image            = "crccheck/hello-world:latest"
@@ -60,4 +62,9 @@ module "fargate" {
   tags = {
     environment = "dev"
   }
+}
+
+output "load_balancer_domain" {
+  description = "Get DNS record of load balancer"
+  value       = module.fargate.load_balancer_domain
 }
