@@ -171,7 +171,9 @@ resource "aws_lb_listener_rule" "routing_http" {
 }
 
 resource "aws_lb_target_group" "task" {
-  for_each    = var.containers_definitions
+  for_each = var.containers_definitions
+
+  name        = "${each.key}-target-lookup-${lookup(var.containers_definitions[each.key], "task_container_port", "")}"
   vpc_id      = var.vpc_id
   protocol    = lookup(var.containers_definitions[each.key], "task_container_protocol", "HTTP")
   port        = lookup(var.containers_definitions[each.key], "task_container_port", null)
