@@ -50,6 +50,8 @@ module "ecs-fargate" {
   private_subnet_ids = var.subnet_ids
   allowed_sg         = module.fargate_alb.security_group_id
   allowed_subnets    = concat(var.allowed_subnets.ipv4)
+
+  depends_list = var.depends_list
 }
 
 module "monitoring_sns_topic" {

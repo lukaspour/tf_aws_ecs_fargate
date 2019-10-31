@@ -232,6 +232,7 @@ resource "aws_lb_target_group" "task" {
 resource "aws_ecs_task_definition" "task" {
   for_each = var.containers_definitions
 
+  depends_on               = [null_resource.lb_exists]
   family                   = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
   execution_role_arn       = aws_iam_role.execution[each.key].arn
   network_mode             = "awsvpc"
@@ -354,7 +355,8 @@ resource "aws_ecs_service" "service" {
 # Service depends on this resources which prevents it from being created until the LB is ready
 resource "null_resource" "lb_exists" {
   triggers = {
-    alb_name = var.alb_arn
+    alb_name    = var.alb_arn
+    depend_list = join(",", var.depends_list)
   }
 }
 
