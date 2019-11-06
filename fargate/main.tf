@@ -334,12 +334,12 @@ resource "aws_ecs_service" "service" {
   network_configuration {
     subnets          = var.private_subnet_ids
     security_groups  = [aws_security_group.ecs_service[each.key].id]
-    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", null)
+    assign_public_ip = lookup(var.containers_definitions[each.key], "task_container_assign_public_ip", false)
   }
 
   load_balancer {
     container_name   = lookup(var.containers_definitions[each.key], "task_container_name", each.key)
-    container_port   = lookup(var.containers_definitions[each.key], "task_container_port", null)
+    container_port   = lookup(var.containers_definitions[each.key], "task_container_port", 80)
     target_group_arn = aws_lb_target_group.task[each.key].arn
   }
 
@@ -355,8 +355,6 @@ resource "aws_ecs_service" "service" {
 # Service depends on this resources which prevents it from being created until the LB is ready
 resource "null_resource" "lb_exists" {
   triggers = {
-    alb_name    = var.alb_arn
-    depend_list = join(",", var.depends_list)
+    alb_name = var.alb_arn
   }
 }
-

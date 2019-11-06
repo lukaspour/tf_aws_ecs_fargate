@@ -53,9 +53,3 @@ variable "allowed_sg" {
   type        = string
   description = "Allowed SG to ECS services, probably useful only for Load Balancer"
 }
-
-variable "depends_list" {
-  type        = list(string)
-  description = "List of dependencies which should be waited for until the fargate module should be evaluated"
-  default     = []
-}

@@ -7,12 +7,12 @@ resource "random_string" "lambda_postfix_generator" {
 }
 
 resource "aws_iam_role" "lambda_main" {
-  name               = "${var.name_prefix}-role"
+  name               = "${var.name_prefix}-role-${random_string.lambda_postfix_generator.result}"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume.json
 }
 
 resource "aws_iam_role_policy" "lambda_main" {
-  name   = "${var.name_prefix}-policy"
+  name   = "${var.name_prefix}-policy-${random_string.lambda_postfix_generator.result}"
   role   = aws_iam_role.lambda_main.name
   policy = var.policy
 }
@@ -47,8 +47,6 @@ resource "aws_lambda_function" "lambda" {
   environment {
     variables = var.environment
   }
-
-  # source_code_hash = base64sha256(file(var.filename))
 
   tags = var.tags
 

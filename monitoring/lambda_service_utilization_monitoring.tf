@@ -56,7 +56,7 @@ module "alarm-lambda" {
 
   policy = data.aws_iam_policy_document.lambda_service_utilization_monitoring.json
 
-  name_prefix = "${var.name_prefix}-monitoring-service-lambda"
+  name_prefix = "${var.name_prefix}-monitoring"
   filename    = "${path.module}/lambda_service_utilization_monitoring.zip"
 
   environment = {

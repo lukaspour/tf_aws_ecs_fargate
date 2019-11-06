@@ -47,3 +47,13 @@ output "load_balancer_domain" {
   description = "Get DNS record of load balancer"
   value       = module.fargate_alb.dns_name
 }
+
+output "load_balancer_arn" {
+  description = "Get ARN of load balancer"
+  value       = module.fargate_alb.arn
+}
+
+output "cluster_id" {
+  description = "Id of ECS cluster"
+  value       = aws_ecs_cluster.cluster.id
+}

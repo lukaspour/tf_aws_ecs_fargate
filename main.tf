@@ -4,11 +4,19 @@ resource "aws_ecs_cluster" "cluster" {
   name = "${var.name_prefix}-cluster"
 }
 
+resource "random_string" "random" {
+  length  = 4
+  upper   = true
+  lower   = true
+  number  = true
+  special = false
+}
+
 module "fargate_alb" {
   source  = "telia-oss/loadbalancer/aws"
   version = "3.0.0"
 
-  name_prefix = var.name_prefix
+  name_prefix = "${var.name_prefix}-${random_string.random.result}"
   type        = "application"
   internal    = var.internal_elb
   vpc_id      = var.vpc_id
@@ -50,8 +58,6 @@ module "ecs-fargate" {
   private_subnet_ids = var.subnet_ids
   allowed_sg         = module.fargate_alb.security_group_id
   allowed_subnets    = concat(var.allowed_subnets.ipv4)
-
-  depends_list = var.depends_list
 }
 
 module "monitoring_sns_topic" {

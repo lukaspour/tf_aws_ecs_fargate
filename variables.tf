@@ -45,9 +45,3 @@ variable "allowed_subnets" {
   }
   description = "Subnets allowed to access the services and load balancer"
 }
-
-variable "depends_list" {
-  type        = list(string)
-  description = "List of dependencies which should be waited for until the fargate module should be evaluated"
-  default     = []
-}

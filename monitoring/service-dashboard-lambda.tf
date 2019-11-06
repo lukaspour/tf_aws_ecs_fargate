@@ -35,7 +35,7 @@ module "dashboard-lambda" {
 
   policy = data.aws_iam_policy_document.lambda_services_dashboard.json
 
-  name_prefix = "${var.name_prefix}-dashboard-service-lambda"
+  name_prefix = "${var.name_prefix}-dashboards"
   filename    = "${path.module}/lambda_services_dashboard.zip"
 
   environment = {
