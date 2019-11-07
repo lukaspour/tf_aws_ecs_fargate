@@ -73,6 +73,15 @@ resource "aws_security_group_rule" "egress_service" {
   ipv6_cidr_blocks  = ["::/0"]
 }
 
+resource "aws_security_group_rule" "ingress_service" {
+  security_group_id = aws_security_group.ecs_service.id
+  type              = "ingress"
+  protocol          = "-1"
+  from_port         = 0
+  to_port           = var.task_container_port
+  cidr_blocks       = var.allowed_subnets
+}
+
 # ------------------------------------------------------------------------------
 # LB Target group
 # ------------------------------------------------------------------------------

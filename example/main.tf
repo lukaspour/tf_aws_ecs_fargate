@@ -66,6 +66,9 @@ module "fargate_service" {
 }
 
 ## More complex example with container definitions in the same module
+#
+# Difference is that due to interpolation, you have to have only static values in containers_definitions map
+#
 
 module "fargate" {
   source = "../"
@@ -73,6 +76,8 @@ module "fargate" {
   name_prefix = "fargate"
   vpc_id      = data.aws_vpc.main.id
   subnet_ids  = data.aws_subnet_ids.main.ids
+
+  internal_elb = false
 
   containers_definitions = {
     helloworld = {

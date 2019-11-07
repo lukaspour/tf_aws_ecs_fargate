@@ -150,6 +150,12 @@ variable "certificate_arn" {
   default     = ""
 }
 
+variable "allowed_subnets" {
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
+  description = "Subnets allowed to access the services and load balancer"
+}
+
 variable "service_listner_rules" {
   type = list(object({
     field  = string
