@@ -27,7 +27,7 @@ module "basic_fargate" {
 }
 
 module "fargate_service" {
-  source = "git@github.com:telia-oss/terraform-aws-ecs-fargate.git"
+  source = "../fargate-service"
 
   name_prefix          = "hello-world"
   vpc_id               = data.aws_vpc.main.id
@@ -50,6 +50,14 @@ module "fargate_service" {
     port = "traffic-port"
     path = "/"
   }
+
+  service_listner_rules = [
+    {
+      field = "host-header"
+      values = [
+      "hello-world.com"]
+    }
+  ]
 
   tags = {
     environment = "dev"
