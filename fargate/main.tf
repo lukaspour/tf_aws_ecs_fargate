@@ -37,7 +37,7 @@ resource "aws_iam_role_policy" "task_execution" {
 }
 
 resource "aws_iam_role_policy" "read_repository_credentials" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "task_repository_credentials", "") != "" }
+  for_each = { for i, z in var.containers_definitions : i => z if z.task_repository_credentials != "" }
   name     = "${lookup(var.containers_definitions[each.key], "task_container_name", each.key)}-read-repository-credentials"
   role     = aws_iam_role.execution[each.key].id
   policy   = data.aws_iam_policy_document.read_repository_credentials[each.key].json
@@ -277,7 +277,7 @@ EOF
 }
 
 resource "aws_ecs_service" "service_with_no_service_registries" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") != "" }
+  for_each = { for i, z in var.containers_definitions : i => z if z.service_registry_arn != "" }
 
   depends_on                         = [null_resource.lb_exists]
   name                               = each.key
@@ -319,7 +319,7 @@ resource "aws_ecs_service" "service_with_no_service_registries" {
 }
 
 resource "aws_ecs_service" "service" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "service_registry_arn", "") == "" }
+  for_each = { for i, z in var.containers_definitions : i => z if z.service_registry_arn == "" }
 
   depends_on                         = [null_resource.lb_exists]
   name                               = each.key

@@ -1,6 +1,6 @@
 
 resource "aws_appautoscaling_target" "ecs_target" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "scaling_enable", false) == true }
+  for_each = { for i, z in var.containers_definitions : i => z if z.scaling_enable == true }
 
   max_capacity       = lookup(var.containers_definitions[each.key], "scaling_max_capacity", 4)
   min_capacity       = lookup(var.containers_definitions[each.key], "scaling_min_capacity", 1)
@@ -10,7 +10,7 @@ resource "aws_appautoscaling_target" "ecs_target" {
 }
 
 resource "aws_appautoscaling_policy" "ecs_scaling_policy" {
-  for_each = { for i, z in var.containers_definitions : i => z if lookup(z, "scaling_enable", false) == true }
+  for_each = { for i, z in var.containers_definitions : i => z if z.scaling_enable == true }
 
   name               = "${each.key}:${lookup(var.containers_definitions[each.key], "scaling_metric", "ECSServiceAverageCPUUtilization")}:${aws_appautoscaling_target.ecs_target[each.key].resource_id}"
   policy_type        = "TargetTrackingScaling"
