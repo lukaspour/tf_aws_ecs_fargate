@@ -70,6 +70,19 @@ module "fargate_service" {
 # Difference is that due to interpolation, you have to have only static values in containers_definitions map
 #
 
+resource "aws_ssm_parameter" "docker-tag" {
+  name  = "nginx_docker_tag"
+  type  = "String"
+  value = "latest"
+}
+
+# this simulates where you can get the version of your docker image
+data "aws_ssm_parameter" "docker-tag" {
+  name       = "nginx_docker_tag"
+  depends_on = [aws_ssm_parameter.docker-tag]
+}
+
+
 module "fargate" {
   source = "../"
 
@@ -99,7 +112,7 @@ module "fargate" {
       }
     }
     hellonginx = {
-      task_container_image            = "nginx:latest"
+      task_container_image            = "nginx:${aws_ssm_parameter.docker-tag.value}"
       task_container_assign_public_ip = true
       task_container_port             = 80
       task_container_environment = [
