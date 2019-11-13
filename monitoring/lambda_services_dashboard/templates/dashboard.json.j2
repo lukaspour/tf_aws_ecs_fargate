@@ -53,7 +53,7 @@
             "height": 5,
             "properties": {
                 "metrics": [
-                    [ "AWS/ApplicationELB", "RequestCountPerTarget", "TargetGroup", "targetgroup/{{ item['ecs_service'] }}/{{ item['target_group_id'] }}", { "stat": "Sum", "period": 60 }]
+                    [ "AWS/ApplicationELB", "RequestCountPerTarget", "TargetGroup", "targetgroup/{{ item['target_group_name'] }}/{{ item['target_group_id'] }}", { "stat": "Sum", "period": 60 }]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -76,7 +76,7 @@
             "height": 5,
             "properties": {
                 "metrics": [
-                    [ "AWS/ApplicationELB", "TargetResponseTime", "TargetGroup", "targetgroup/{{ item['ecs_service'] }}/{{ item['target_group_id'] }}", "LoadBalancer", "{{ item['load_balancer'] }}" ]
+                    [ "AWS/ApplicationELB", "TargetResponseTime", "TargetGroup", "targetgroup/{{ item['target_group_name'] }}/{{ item['target_group_id'] }}", "LoadBalancer", "app/{{ item['load_balancer_name'] }}/{{ item['load_balancer_id'] }}" ]
                 ],
                 "view": "timeSeries",
                 "stacked": false,
@@ -115,7 +115,7 @@
                 "view": "timeSeries",
                 "stacked": false,
                 "metrics": [
-                    [ "AWS/ApplicationELB", "UnHealthyHostCount", "TargetGroup", "targetgroup/{{ item['ecs_service'] }}/{{ item['target_group_id'] }}", "LoadBalancer", "{{ item['load_balancer'] }}" ],
+                    [ "AWS/ApplicationELB", "UnHealthyHostCount", "TargetGroup", "targetgroup/{{ item['target_group_name'] }}/{{ item['target_group_id'] }}", "LoadBalancer", "app/{{ item['load_balancer_name'] }}/{{ item['load_balancer_id'] }}" ],
                     [ ".", "HealthyHostCount", ".", ".", ".", "." ]
                 ],
                 "region": "eu-west-1",

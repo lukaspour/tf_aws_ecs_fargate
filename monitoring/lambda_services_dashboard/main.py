@@ -1,7 +1,6 @@
 import json
 import boto3
 import logging
-import re
 import os
 from jinja2 import Environment, FileSystemLoader
 
@@ -33,6 +32,8 @@ def lambda_handler(event, context):
     env = Environment(loader=FileSystemLoader(templates_dir))
     template = env.get_template('dashboard.json.j2')
 
+    dashboard_data = {}
+
     # basic listing, list services returns only 10 records at once
     services = ecs.list_services(
         cluster=cluster_name
@@ -45,54 +46,45 @@ def lambda_handler(event, context):
         )
         services_list += services['serviceArns']
 
-    services_names = [
-        service.split("/")[1][0:32] for service in services_list if re.fullmatch(
-            r"[0-9a-zA-Z\-]+", service.split("/")[1][0:32]
-        )
-    ]
+    services = []
+    for i in range(0, len(services_list), 10):
+        services += ecs.describe_services(
+            cluster=cluster_name,
+            services=services_list[i:i+10]
+        )['services']
 
-    target_groups = []
-    for services_name in services_names:
-        try:
-            target_groups.append(
-                elb.describe_target_groups(
-                    Names=[services_name]
-                )['TargetGroups'][0]
-            )
-        except elb.exceptions.TargetGroupNotFoundException:
+    for s in services:
+        tmp = {}
+        if len(s['loadBalancers']) == 0:
             continue
+        target_groups = elb.describe_target_groups(
+            TargetGroupArns=[s['loadBalancers'][0]['targetGroupArn']]
+        )['TargetGroups']
+        if len(target_groups) == 0:
+            continue
+        tmp['target_group'] = target_groups[0]['TargetGroupName']
+        tmp['target_group_id'] = s['loadBalancers'][0]['targetGroupArn'].split('/')[-1]
+        load_balancers = elb.describe_load_balancers(LoadBalancerArns=[target_groups[0]['LoadBalancerArns'][0]])
+        if len(load_balancers['LoadBalancers']) == 0:
+            continue
+        tmp['load_balancer'] = load_balancers['LoadBalancers'][0]['LoadBalancerName']
+        tmp['load_balancer_id'] = load_balancers['LoadBalancers'][0]['LoadBalancerArn'].split('/')[-1]
+        dashboard_data[s['serviceName']] = tmp
 
     template_data_list = []
-
     y_counter = 0
 
-    for service in services_names:
-        try:
-            target_group = [
-                tg['TargetGroupArn'].split('/')[-1] for tg in target_groups if tg['TargetGroupName'] == service
-            ][0]
-            load_balancer = [
-                tg['LoadBalancerArns'] for tg in target_groups if tg['TargetGroupName'] == service
-            ][0]
-        except IndexError:
-            # Service does not have target group or load balancer
-            continue
-
-        if len(load_balancer) > 0:
-            load_balancer = load_balancer[0]
-            load_balancer = load_balancer[
-                load_balancer.find('loadbalancer') + len('loadbalancer') + 1:
-            ]
-        else:
-            load_balancer = ""
+    for service in dashboard_data:
         template_data_list += [
             {
-                "target_group_id": target_group,
-                "ecs_cluster_name": cluster_name,
+                "target_group_id": dashboard_data[service]['target_group_id'],
+                "target_group_name": dashboard_data[service]['target_group'],
                 "ecs_service": service,
+                "load_balancer_name": dashboard_data[service]['load_balancer'],
+                "load_balancer_id": dashboard_data[service]['load_balancer_id'],
+                "ecs_cluster_name": cluster_name,
                 "region": ecs_region_name,
                 "y": y_counter,
-                "load_balancer": load_balancer
             }
         ]
         y_counter += 1
@@ -100,9 +92,6 @@ def lambda_handler(event, context):
     dashboard_body = template.render(
         template_data_list=template_data_list
     )
-
-    # print(json.loads(dashboard_body))
-
     clw.put_dashboard(
         DashboardName=cluster_name + "-ecs-services-list-dashboard",
         DashboardBody=dashboard_body
