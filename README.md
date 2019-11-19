@@ -107,7 +107,7 @@ This is a special map of arguments needed for definition of tasks and services:
 | scaling\_metric | Enable scaling for the task | string ECSServiceAverageCPUUtilization or ECSServiceAverageMemoryUtilization | ECSServiceAverageCPUUtilization | no |
 | scaling\_target\_value | Threshold to be reached to scale up/down | number | 70 | no |
 
-# Module `.`
+# This module 
 
 Provider Requirements:
 * **aws:** (any version)
@@ -366,6 +366,10 @@ Provider Requirements:
 * `sns_topic` from `terraform-aws-modules/sns/aws` (`~> 2.0`)
 
 
+# Certificate handling
 
+This module so far does not handle certificate management. You can add `certificate_arn` to add TLS to AWS Load Balancer but creation of the certificate is up to you.
+
+To handle certificate, their creation and usage, see https://www.terraform.io/docs/providers/aws/r/acm_certificate_validation.html 
 
 
