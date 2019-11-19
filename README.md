@@ -11,6 +11,8 @@ This module:
 - Creates AWS ECS Services with tasks at Fargate cluster
 - Creates Lambda functions for dynamic creation of alerts and dashboards at CloudWatch
 
+This module was strongly inspired by https://github.com/telia-oss/terraform-aws-ecs-fargate
+
 # Diagram of created resources
 
 ![Resources](https://raw.githubusercontent.com/lukaspour/tf_aws_ecs_fargate/master/fargate.png)
