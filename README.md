@@ -4,10 +4,16 @@ A terraform module providing a Fargate cluster in AWS.
 
 This module:
 
-- Creates a load balancer
+- Creates an AWS Application load balancer
 - Populate it with listeners
 - Creates target groups
-- Creates services with tasks at Fargate cluster
+- Creates Fargate cluster
+- Creates AWS ECS Services with tasks at Fargate cluster
+- Creates Lambda functions for dynamic creation of alerts and dashboards at CloudWatch
+
+# Diagram of created resources
+
+![Resources](https://raw.githubusercontent.com/lukaspour/tf_aws_ecs_fargate/master/fargate.png)
 
 ## Usage
 
